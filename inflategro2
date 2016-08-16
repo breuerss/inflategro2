@@ -21,6 +21,8 @@
 
 ### Load Packages ##############################################################
 use strict;
+use warnings;
+
 use Cwd;
 use Math::Trig;
 use IO::Handle;
