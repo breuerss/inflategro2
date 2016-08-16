@@ -1529,12 +1529,7 @@ sub iniGrid {
     my $gridsizeY = int($$boxRef{'cooY'} / $gridDelta) + 1;
 
     printf("      Create a %dx%d XY grid: 0%%\r", $gridsizeX, $gridsizeY) if $main::verbose;
-    for (my $x=0; $x<=$gridsizeX; $x++) {
-        printf("      Create a %dx%d XY grid: %d%%\r", $gridsizeX, $gridsizeY, 100*$x/$gridsizeX) if $main::verbose;
-        for (my $y=0; $y<=$gridsizeY; $y++) {
-            $grid[$x][$y] = 0;
-        }
-    }
+    push @grid, [ (0) x $gridsizeX ] for (1..$gridsizeY);
     printf("      Create a %dx%d XY grid: 100%%\n", $gridsizeX, $gridsizeY) if $main::verbose;
     ############################################################################
 
