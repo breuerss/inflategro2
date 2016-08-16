@@ -1448,16 +1448,14 @@ sub detectLeaflets {
     $leafletData{'lower'}{'nLipids'} = 0;
 
     foreach (@{$headAtomIdsRef}) {
+        my $leaflet = 'lower';
         if ($$coordsRef[$_]{'cooZ'} > $bilayerCenterZ) {
-            $leafletData{'upper'}{'uResIds'}[ $$coordsRef[$_]{'uResId'} ] = 1;
-            $leafletData{'upper'}{'headCooZAvg'} += $$coordsRef[$_]{'cooZ'};
-            $leafletData{'upper'}{'nLipids'}++;
+            $leaflet = 'upper';
         }
-        else {
-            $leafletData{'lower'}{'uResIds'}[ $$coordsRef[$_]{'uResId'} ] = 1;
-            $leafletData{'lower'}{'headCooZAvg'} += $$coordsRef[$_]{'cooZ'};
-            $leafletData{'lower'}{'nLipids'}++;
-        }
+
+        $leafletData{$leaflet}{'uResIds'}[ $$coordsRef[$_]{'uResId'} ] = 1;
+        $leafletData{$leaflet}{'headCooZAvg'} += $$coordsRef[$_]{'cooZ'};
+        $leafletData{$leaflet}{'nLipids'}++;
     }
     $leafletData{'upper'}{'headCooZAvg'} /= $leafletData{'upper'}{'nLipids'} if $leafletData{'upper'}{'nLipids'};
     $leafletData{'lower'}{'headCooZAvg'} /= $leafletData{'lower'}{'nLipids'} if $leafletData{'lower'}{'nLipids'};
