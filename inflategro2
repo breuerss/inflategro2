@@ -176,6 +176,50 @@ my $protGroupId = $protGroupIds[0]; # Only one group can be defined as protein.
 
 my @cavGeoCenterXy;
 
+sub handleLeaflet {
+    my $lipidData = shift;
+    my $leaflet = shift;
+
+    ### Determine the XY area occupied by protein ##############################
+    printf("    Detecting protein area ($leaflet leaflet)...\n") if $verbose;
+    my @tmpArray;
+
+    @tmpArray = Protein::analyzeProtein(\@ndxData,
+                                        $protGroupId,
+                                        \@suGroupIds,
+                                        $coordData{'atoms'},
+                                        $coordData{'box'},
+                                        $gridDelta,
+                                        ($lipidData[$_]{'leaflets'}{$leaflet}{'headCooZAvg'} - 0.5),
+                                        ($lipidData[$_]{'leaflets'}{$leaflet}{'headCooZAvg'} + 0.5),
+                                        $extCavDetection,
+                                        $ndxData[$_]{'groupName'} . ".$leaflet.xy");
+    $gridAProt[$_]{$leaflet} = $tmpArray[0];
+    $gridACav[$_]{$leaflet}  = $tmpArray[1];
+    $gridAProt[$_]{$leaflet} += $gridACav[$_]{$leaflet} unless $lipidFilledCav; # If the detected cavity is empty (not lipid-filled), the excluded area for lipid packing is AProtein + ALipid.
+
+    printf("      Detected area excludable for lipid packing: %7.4f nm^2\n", $gridAProt[$_]{$leaflet}) if $verbose;
+
+    if ($lipidFilledCav) { # Calculate the geometrical XY center of the cavity (upper leaflet).
+        my $tmpCounter = 0;
+        for (my $x=0; $x<=@{$tmpArray[2]}; $x++) {
+            next unless ${$tmpArray[2]}[$x];
+            print "$x\r";
+            for (my $y=0; $y<=@{$tmpArray[2][$x]}; $y++) {
+                next unless ${$tmpArray[2]}[$x][$y];
+                next unless ${$tmpArray[2]}[$x][$y] == 2; # Next loop if this grid point is not defined as cavity.
+                $cavGeoCenterXy[$_]{$leaflet}{'cooX'} += $x * $gridDelta;
+                $cavGeoCenterXy[$_]{$leaflet}{'cooY'} += $y * $gridDelta;
+                $tmpCounter++;
+            }
+        }
+        $cavGeoCenterXy[$_]{$leaflet}{'cooX'} /= $tmpCounter;
+        $cavGeoCenterXy[$_]{$leaflet}{'cooY'} /= $tmpCounter;
+        $cavGeoCenterXy[$_]{$leaflet}{'cooZ'} = $lipidData[$_]{'leaflets'}{$leaflet}{'headCooZAvg'};
+    }
+
+}
+
 ### Basic analysis #############################################################
 foreach (@inflGroupIds) {
     printf("\n  ---------------------------------\n  Analyze group \"%s\" (ID=%d)...\r", $ndxData[$_]{'groupName'}, $_);
@@ -188,79 +232,9 @@ foreach (@inflGroupIds) {
     ############################################################################
 
 
-    ### Determine the XY area occupied by protein ##############################
-    printf("    Detecting protein area (upper leaflet)...\n") if $verbose;
-    my @tmpArray;
+    handleLeaflet(\@lipidData, 'upper');
+    handleLeaflet(\@lipidData, 'lower');
 
-    @tmpArray = Protein::analyzeProtein(\@ndxData,
-                                        $protGroupId,
-                                        \@suGroupIds,
-                                        $coordData{'atoms'},
-                                        $coordData{'box'},
-                                        $gridDelta,
-                                        ($lipidData[$_]{'leaflets'}{'upper'}{'headCooZAvg'} - 0.5),
-                                        ($lipidData[$_]{'leaflets'}{'upper'}{'headCooZAvg'} + 0.5),
-                                        $extCavDetection,
-                                        $ndxData[$_]{'groupName'} . ".upper.xy");
-    $gridAProt[$_]{'upper'} = $tmpArray[0];
-    $gridACav[$_]{'upper'}  = $tmpArray[1];
-    $gridAProt[$_]{'upper'} += $gridACav[$_]{'upper'} unless $lipidFilledCav; # If the detected cavity is empty (not lipid-filled), the excluded area for lipid packing is AProtein + ALipid.
-
-    printf("      Detected area excludable for lipid packing: %7.4f nm^2\n", $gridAProt[$_]{'upper'}) if $verbose;
-
-    if ($lipidFilledCav) { # Calculate the geometrical XY center of the cavity (upper leaflet).
-        my $tmpCounter = 0;
-        for (my $x=0; $x<=@{$tmpArray[2]}; $x++) {
-            next unless ${$tmpArray[2]}[$x];
-            print "$x\r";
-            for (my $y=0; $y<=@{$tmpArray[2][$x]}; $y++) {
-                next unless ${$tmpArray[2]}[$x][$y];
-                next unless ${$tmpArray[2]}[$x][$y] == 2; # Next loop if this grid point is not defined as cavity.
-                $cavGeoCenterXy[$_]{'upper'}{'cooX'} += $x * $gridDelta;
-                $cavGeoCenterXy[$_]{'upper'}{'cooY'} += $y * $gridDelta;
-                $tmpCounter++;
-            }
-        }
-        $cavGeoCenterXy[$_]{'upper'}{'cooX'} /= $tmpCounter;
-        $cavGeoCenterXy[$_]{'upper'}{'cooY'} /= $tmpCounter;
-        $cavGeoCenterXy[$_]{'upper'}{'cooZ'} = $lipidData[$_]{'leaflets'}{'upper'}{'headCooZAvg'};
-    }
-
-
-    printf("    Detecting protein area (lower leaflet)...\n") if $verbose;
-    @tmpArray = Protein::analyzeProtein(\@ndxData,
-                                        $protGroupId,
-                                        \@suGroupIds,
-                                        $coordData{'atoms'},
-                                        $coordData{'box'},
-                                        $gridDelta,
-                                        ($lipidData[$_]{'leaflets'}{'lower'}{'headCooZAvg'} - 0.5),
-                                        ($lipidData[$_]{'leaflets'}{'lower'}{'headCooZAvg'} + 0.5),
-                                        $extCavDetection,
-                                        $ndxData[$_]{'groupName'} . ".lower.xy");
-    $gridAProt[$_]{'lower'} = $tmpArray[0];
-    $gridACav[$_]{'lower'}  = $tmpArray[1];
-    $gridAProt[$_]{'lower'} += $gridACav[$_]{'lower'} unless $lipidFilledCav;
-
-    printf("      Detected area excludable for lipid packing: %7.4f nm^2\n", $gridAProt[$_]{'lower'}) if $verbose;
-
-    if ($lipidFilledCav) { # Calculate the geometrical XY center of the cavity (lower leaflet).
-        my $tmpCounter = 0;
-        for (my $x=0; $x<=@{$tmpArray[2]}; $x++) {
-            next unless ${$tmpArray[2]}[$x];
-
-            for (my $y=0; $y<=@{$tmpArray[2][$x]}; $y++) {
-                next unless ${$tmpArray[2]}[$x][$y];
-                next unless ${$tmpArray[2]}[$x][$y] == 2; # Next loop if this grid point is not defined as cavity.
-                $cavGeoCenterXy[$_]{'lower'}{'cooX'} += $x * $gridDelta;
-                $cavGeoCenterXy[$_]{'lower'}{'cooY'} += $y * $gridDelta;
-                $tmpCounter++;
-            }
-        }
-        $cavGeoCenterXy[$_]{'lower'}{'cooX'} /= $tmpCounter;
-        $cavGeoCenterXy[$_]{'lower'}{'cooY'} /= $tmpCounter;
-        $cavGeoCenterXy[$_]{'lower'}{'cooZ'} = $lipidData[$_]{'leaflets'}{'lower'}{'headCooZAvg'};
-    }
     ############################################################################
 
     printf("  Analyze group \"%s\" (ID=%d): Finished\n", $ndxData[$_]{'groupName'}, $_) unless $verbose;
