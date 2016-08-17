@@ -440,9 +440,6 @@ foreach (@inflGroupIds) {
             push(@inflResList, $uResId); # Only to check the output. COMMENT THIS OUT.
         }
     }
-    push(@{$statNdxGroup{'atoms'}}, @{$statAtomList[$_]});
-    push(@{$dynaNdxGroup{'atoms'}}, @{$inflAtomList[$_]});
-    push(@{$cavNdxGroup{'atoms'}}, @{$cavAtomList[$_]}) if $lipidFilledCav;
 
     print "Will inflate these residues\n";
     for (my $i=0; $i<@inflResList; $i++) {
