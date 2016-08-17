@@ -292,20 +292,20 @@ foreach (@inflGroupIds) {
 
     ### Part the detected lipids to their leaflets #############################
     foreach my $item (@resOverlapScoreSorted) {
-        if ($lipidData[$_]{'leaflets'}{'upper'}{'uResIds'}[ $$item{'uResId'} ]) {
-            push(@{$resOverlapList[$_]{'upper'}}, $$item{'uResId'});
-        }
-        elsif ($lipidData[$_]{'leaflets'}{'lower'}{'uResIds'}[ $$item{'uResId'} ]) {
-            push(@{$resOverlapList[$_]{'lower'}}, $$item{'uResId'});
+        foreach my $leaflet ('upper', 'lower') {
+            if ($lipidData[$_]{'leaflets'}{$leaflet}{'uResIds'}[ $$item{'uResId'} ]) {
+                push(@{$resOverlapList[$_]{$leaflet}}, $$item{'uResId'});
+                last;
+            }
         }
     }
 
     foreach my $item (@resCavityScoreSorted) { # Cavity lipids.
-        if ($lipidData[$_]{'leaflets'}{'upper'}{'uResIds'}[ $$item{'uResId'} ]) {
-            push(@{$resCavityList[$_]{'upper'}}, $$item{'uResId'});
-        }
-        elsif ($lipidData[$_]{'leaflets'}{'lower'}{'uResIds'}[ $$item{'uResId'} ]) {
-            push(@{$resCavityList[$_]{'lower'}}, $$item{'uResId'});
+        foreach my $leaflet ('upper', 'lower') {
+            if ($lipidData[$_]{'leaflets'}{$leaflet}{'uResIds'}[ $$item{'uResId'} ]) {
+                push(@{$resCavityList[$_]{$leaflet}}, $$item{'uResId'});
+                last;
+            }
         }
     }
     ############################################################################
@@ -341,19 +341,15 @@ foreach (@inflGroupIds) {
         print "Upper leaflet: $nLipidCav[$_]{'upper'} ($gridAProt[$_]{'upper'}); Lower leaflet: $nLipidCav[$_]{'lower'} ($gridAProt[$_]{'lower'})\n";
         print "Upper leaflet: " . int($nLipidCav[$_]{'upper'}) . "; Lower leaflet: " . int($nLipidCav[$_]{'lower'}) . "\n";
 
-        print "Cavity lipids in the upper leaflet:\n";
-        for (my $i=0; $i<int($nLipidCav[$_]{'upper'}); $i++) {
-            print " " . $resCavityList[$_]{'upper'}[$i];
-            $cavRes{'upper'}[$resCavityList[$_]{'upper'}[$i]] = 1;
-        }
-        print "\n";
+        foreach my $leaflet ('upper', 'lower') {
+            print "Cavity lipids in the $leaflet leaflet:\n";
+            for (my $i=0; $i<int($nLipidCav[$_]{$leaflet}); $i++) {
+                print " " . $resCavityList[$_]{$leaflet}[$i];
+                $cavRes{$leaflet}[$resCavityList[$_]{$leaflet}[$i]] = 1;
+            }
+            print "\n";
 
-        print "Cavity lipids in the lower leaflet:\n";
-        for (my $i=0; $i<int($nLipidCav[$_]{'lower'}); $i++) {
-            print " " . $resCavityList[$_]{'lower'}[$i];
-            $cavRes{'lower'}[$resCavityList[$_]{'lower'}[$i]] = 1;
         }
-        print "\n";
     }
     ############################################################################
 
@@ -391,15 +387,13 @@ foreach (@inflGroupIds) {
     print "\n";
 
 
-    my @tmpArray = delResidues($coordData{'atoms'}, $delRes{'upper'});
-    $coordData{'atoms'} = $tmpArray[0];
-    my $delAtomsDataRef = $tmpArray[1];
-    updateDelResnames(\%delResnames, $delAtomsDataRef) if $topFile && !$noDeflating;
+    foreach my $leaflet ('upper', 'lower') {
+        my @tmpArray = delResidues($coordData{'atoms'}, $delRes{$leaflet});
+        $coordData{'atoms'} = $tmpArray[0];
+        my $delAtomsDataRef = $tmpArray[1];
+        updateDelResnames(\%delResnames, $delAtomsDataRef) if $topFile && !$noDeflating;
+    }
 
-    @tmpArray = delResidues($coordData{'atoms'}, $delRes{'lower'});
-    $coordData{'atoms'} = $tmpArray[0];
-    $delAtomsDataRef    = $tmpArray[1];
-    updateDelResnames(\%delResnames, $delAtomsDataRef) if $topFile && !$noDeflating;
     ############################################################################
 
 
@@ -425,27 +419,19 @@ foreach (@inflGroupIds) {
             push(@{$cavAtomList[$_]}, @{$uResIdAtomIdList[$uResId]});
             push(@cavResList, $uResId); # Only to check the output. COMMENT THIS OUT.
 
-            if ($cavRes{'upper'}[$uResId]) {
-                foreach my $cavAtomId (@{$uResIdAtomIdList[$uResId]}) {
-                    $groupCavAtomInflVectors[$_][$cavAtomId]{'cooX'} = $coordData{'atoms'}[$cavAtomId]{'cooX'} - $cavGeoCenterXy[$_]{'upper'}{'cooX'};
-                    $groupCavAtomInflVectors[$_][$cavAtomId]{'cooY'} = $coordData{'atoms'}[$cavAtomId]{'cooY'} - $cavGeoCenterXy[$_]{'upper'}{'cooY'};
-                    $groupCavAtomInflVectors[$_][$cavAtomId]{'cooZ'} = $coordData{'atoms'}[$cavAtomId]{'cooZ'} - $cavGeoCenterXy[$_]{'upper'}{'cooZ'};
+            foreach my $leaflet ('upper', 'lower') {
+                if ($cavRes{$leaflet}[$uResId]) {
+                    foreach my $cavAtomId (@{$uResIdAtomIdList[$uResId]}) {
+                        print "Ascribe atom $cavAtomId a translation vector\n";
+                        $groupCavAtomInflVectors[$_][$cavAtomId]{'cooX'} = $coordData{'atoms'}[$cavAtomId]{'cooX'} - $cavGeoCenterXy[$_]{$leaflet}{'cooX'};
+                        $groupCavAtomInflVectors[$_][$cavAtomId]{'cooY'} = $coordData{'atoms'}[$cavAtomId]{'cooY'} - $cavGeoCenterXy[$_]{$leaflet}{'cooY'};
+                        $groupCavAtomInflVectors[$_][$cavAtomId]{'cooZ'} = $coordData{'atoms'}[$cavAtomId]{'cooZ'} - $cavGeoCenterXy[$_]{$leaflet}{'cooZ'};
 
-                    $coordData{'atoms'}[$cavAtomId]{'cooX'} = $cavGeoCenterXy[$_]{'upper'}{'cooX'};
-                    $coordData{'atoms'}[$cavAtomId]{'cooY'} = $cavGeoCenterXy[$_]{'upper'}{'cooY'};
-                    $coordData{'atoms'}[$cavAtomId]{'cooZ'} = $cavGeoCenterXy[$_]{'upper'}{'cooZ'};
-                }
-            }
-            elsif ($cavRes{'lower'}[$uResId]) {
-                foreach my $cavAtomId (@{$uResIdAtomIdList[$uResId]}) {
-                    print "Ascribe atom $cavAtomId a translation vector\n";
-                    $groupCavAtomInflVectors[$_][$cavAtomId]{'cooX'} = $coordData{'atoms'}[$cavAtomId]{'cooX'} - $cavGeoCenterXy[$_]{'lower'}{'cooX'};
-                    $groupCavAtomInflVectors[$_][$cavAtomId]{'cooY'} = $coordData{'atoms'}[$cavAtomId]{'cooY'} - $cavGeoCenterXy[$_]{'lower'}{'cooY'};
-                    $groupCavAtomInflVectors[$_][$cavAtomId]{'cooZ'} = $coordData{'atoms'}[$cavAtomId]{'cooZ'} - $cavGeoCenterXy[$_]{'lower'}{'cooZ'};
-
-                    $coordData{'atoms'}[$cavAtomId]{'cooX'} = $cavGeoCenterXy[$_]{'lower'}{'cooX'};
-                    $coordData{'atoms'}[$cavAtomId]{'cooY'} = $cavGeoCenterXy[$_]{'lower'}{'cooY'};
-                    $coordData{'atoms'}[$cavAtomId]{'cooZ'} = $cavGeoCenterXy[$_]{'lower'}{'cooZ'};
+                        $coordData{'atoms'}[$cavAtomId]{'cooX'} = $cavGeoCenterXy[$_]{$leaflet}{'cooX'};
+                        $coordData{'atoms'}[$cavAtomId]{'cooY'} = $cavGeoCenterXy[$_]{$leaflet}{'cooY'};
+                        $coordData{'atoms'}[$cavAtomId]{'cooZ'} = $cavGeoCenterXy[$_]{$leaflet}{'cooZ'};
+                    }
+                    last;
                 }
             }
         }
