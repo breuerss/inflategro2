@@ -178,7 +178,7 @@ my $protGroupId = $protGroupIds[0]; # Only one group can be defined as protein.
 
 my @cavGeoCenterXy;
 
-sub handleLeaflet {
+sub detectProteinArea {
     my $lipidData = shift;
     my $leaflet = shift;
 
@@ -234,8 +234,8 @@ foreach (@inflGroupIds) {
     ############################################################################
 
 
-    handleLeaflet(\@lipidData, 'upper');
-    handleLeaflet(\@lipidData, 'lower');
+    detectProteinArea(\@lipidData, 'upper');
+    detectProteinArea(\@lipidData, 'lower');
 
     ############################################################################
 
