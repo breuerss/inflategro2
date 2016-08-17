@@ -202,7 +202,7 @@ sub detectProteinArea {
 
     printf("      Detected area excludable for lipid packing: %7.4f nm^2\n", $gridAProt[$_]{$leaflet}) if $verbose;
 
-    if ($lipidFilledCav) { # Calculate the geometrical XY center of the cavity (upper leaflet).
+    if ($lipidFilledCav) { # Calculate the geometrical XY center of the cavity.
         my $tmpCounter = 0;
         for (my $x=0; $x<=@{$tmpArray[2]}; $x++) {
             next unless ${$tmpArray[2]}[$x];
