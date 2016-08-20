@@ -1717,7 +1717,8 @@ sub getGridSlope {
 
 sub printCavityInformation {
     my $cavityArea = shift;
-    printf("      Detecting protein internal cavities: %.4f nm^2 possible      \r", $cavityArea) if $main::verbose;
+    my $last = shift;
+    printf("      Detecting protein internal cavities: %.4f nm^2 possible      " . $last, $cavityArea) if $main::verbose;
 }
 
 sub detectCavity {
@@ -1731,7 +1732,7 @@ sub detectCavity {
     my $gridDelta2    = $gridDelta*$gridDelta;
 
 
-    printCavityInformation(0);
+    printCavityInformation(0, "\r");
     ### Invert protein grid (set all empty grid points to 2 (poss. cav.)) ######
     for (my $x=0; $x<=$gridsizeX; $x++) {
         for (my $y=0; $y<=$gridsizeY; $y++) {
@@ -1739,7 +1740,7 @@ sub detectCavity {
             $$gridRef[$x][$y] = 2;
             $nCavityAreas++;
         }
-        printCavityInformation($nCavityAreas*$gridDelta2);
+        printCavityInformation($nCavityAreas*$gridDelta2, "\r");
     }
     ############################################################################
 
@@ -1751,18 +1752,18 @@ sub detectCavity {
         for (my $x=0; $x<=$gridsizeX; $x++) {
             my $neighbCellX = $x - 1;
             $nCavityAreas -= $foundExcl1 = washingOutY($x, $neighbCellX, $gridsizeY, $gridRef, $extCavDetection);
-            printCavityInformation($nCavityAreas*$gridDelta2);
+            printCavityInformation($nCavityAreas*$gridDelta2, "\r");
         }
 
         for (my $x=$gridsizeX; $x>=0; $x--) {
             my $neighbCellX = $x + 1;
             $nCavityAreas -= $foundExcl2 = washingOutY($x, $neighbCellX, $gridsizeY, $gridRef, $extCavDetection);
-            printCavityInformation($nCavityAreas*$gridDelta2);
+            printCavityInformation($nCavityAreas*$gridDelta2, "\r");
         }
         $i = 0 if $foundExcl1 || $foundExcl2;
     }
     ############################################################################
-    printCavityInformation($nCavityAreas*$gridDelta2);
+    printCavityInformation($nCavityAreas*$gridDelta2, "\n");
 
     return ($nCavityAreas*$gridDelta2);
 }
