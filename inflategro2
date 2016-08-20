@@ -23,6 +23,7 @@
 use strict;
 use warnings;
 
+use File::Which;
 use Cwd;
 use Math::Trig;
 use IO::Handle;
@@ -31,6 +32,37 @@ use File::Copy; # Only needed for topology update (backup file).
 use Fcntl;
 autoflush STDOUT 1; # For direct output.
 ################################################################################
+
+my $grompp;
+my $mdrun;
+sub prepareGromacsTools {
+    $grompp = getGrompp();
+    $mdrun = getMdrun();
+}
+
+sub getGrompp {
+    return getGromacsTool('grompp');
+}
+
+sub getMdrun {
+    return getGromacsTool('mdrun');
+}
+
+sub getGromacsTool {
+    my $toolname = shift;
+    my $tool = which($toolname);
+    unless ($tool) {
+        $tool = which('gmx');
+        unless(defined $tool) {
+            print "Neither '$toolname' nor 'gmx' could be found in PATH.\n";
+            exit 1;
+        }
+        $tool .= ' ' . $toolname;
+    }
+    return $tool;
+}
+
+prepareGromacsTools();
 
 
 
@@ -975,14 +1007,15 @@ sub doEM {
     my $ndxFile   = shift;
     my $shrinkOut = shift;
 
-    my $tmpCmd = sprintf("grompp -f %s -c %s -p %s -n %s -o %s -maxwarn 1", $mdpFile, $coordFile, $topFile, $ndxFile, 'tmp.tpr');
+    my $tmpCmd = sprintf("$grompp -f %s -c %s -p %s -n %s -o %s", $mdpFile, $coordFile, $topFile, $ndxFile, 'tmp.tpr');
     print $tmpCmd . "\n";
     `$tmpCmd 1>>log.out 2>&1`;
+    die if $?;
 
-#    $tmpCmd = sprintf("mdrun -s %s -v -deffnm %s -c %s", 'tmp.tpr', 'tmp_out', $shrinkOut);
-    $tmpCmd = sprintf("mdrun -s %s -v -deffnm %s -c %s -nt 1", 'tmp.tpr', 'tmp_out', $shrinkOut); # For GROMACS 4.5.5.
+    $tmpCmd = sprintf("$mdrun -s %s -v -deffnm %s -c %s", 'tmp.tpr', 'tmp_out', $shrinkOut);
     print $tmpCmd . "\n";
     `$tmpCmd 1>>log.out 2>&1`;
+    die if $?;
 
     system("rm tmp.tpr tmp_out.* step*.pdb mdout.mdp");
 }
