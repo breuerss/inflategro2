@@ -68,6 +68,7 @@ set ylabel 'y_{Box}'
 
 set output \"$outFile\"
 #splot "$pltFile" u 1:2:3 w p notitle palette pointsize 0.00005 pointtype 5
+set cbrange [0:2]
 splot "$pltFile" u 1:2:3 w p notitle palette pointsize 0.05 pointtype 5
 End
 
