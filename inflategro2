@@ -250,9 +250,12 @@ sub detectProteinArea {
                 $tmpCounter++;
             }
         }
-        $cavGeoCenterXy[$_]{$leaflet}{'cooX'} /= $tmpCounter;
-        $cavGeoCenterXy[$_]{$leaflet}{'cooY'} /= $tmpCounter;
-        $cavGeoCenterXy[$_]{$leaflet}{'cooZ'} = $lipidData[$_]{'leaflets'}{$leaflet}{'headCooZAvg'};
+
+        if ($cavGeoCenterXy[$_]{$leaflet}) {
+            $cavGeoCenterXy[$_]{$leaflet}{'cooX'} /= $tmpCounter;
+            $cavGeoCenterXy[$_]{$leaflet}{'cooY'} /= $tmpCounter;
+            $cavGeoCenterXy[$_]{$leaflet}{'cooZ'} = $lipidData[$_]{'leaflets'}{$leaflet}{'headCooZAvg'};
+        }
     }
 
 }
