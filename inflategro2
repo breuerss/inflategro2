@@ -198,9 +198,12 @@ if ($ndxInFile) {
 elsif ($lipidResname) {
     $inflGroupIds[0]          = 1;
     $protGroupIds[0]          = 2;
+    $ndxData[0]{'groupName'}  = 'System';
+    $ndxData[0]{'atoms'}      = getAtomIdList($coordData{'atoms'}, 'resName', '.*');
     $ndxData[1]{'groupName'}  = $lipidResname;
     $ndxData[1]{'atoms'}      = getAtomIdList($coordData{'atoms'}, 'resName', $lipidResname);
-    $ndxData[2]{'atoms'}      = getAtomIdList($coordData{'atoms'}, 'resName', "([^(SOL)]|($lipidResname))");
+    $ndxData[2]{'groupName'}  = 'Protein';
+    $ndxData[2]{'atoms'}      = getAtomIdList($coordData{'atoms'}, 'resName', "^((?!SOL|$lipidResname).)*\$");
 }
 else {
     printHelp();
@@ -477,11 +480,13 @@ foreach (@inflGroupIds) {
     for (my $i=0; $i<@inflResList; $i++) {
         print " " . $inflResList[$i];
     }
+    $dynaNdxGroup{'atoms'} = \@{$inflAtomList[$_]};
     print "\n";
     print "Will handle these residues as static\n";
     for (my $i=0; $i<@statResList; $i++) {
         print " " . $statResList[$i];
     }
+    $statNdxGroup{'atoms'} = \@{$statAtomList[$_]};
     print "\n";
 
     if ($lipidFilledCav) {
@@ -489,6 +494,7 @@ foreach (@inflGroupIds) {
         for (my $i=0; $i<@cavResList; $i++) {
             print " " . $cavResList[$i];
         }
+        $cavNdxGroup{'atoms'} = \@cavAtomList;
         print "\n";
     }
     
