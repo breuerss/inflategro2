@@ -1561,7 +1561,12 @@ sub iniGrid {
     return (\@grid, $gridsizeX, $gridsizeY);
 }
 
-
+sub printAtomMapping {
+    my $percent = shift;
+    my $area = shift;
+    my $last = shift;
+    printf("      Mapping atoms to the grid: %d%% (protein area %.4f nm^2)" . $last, $percent, $area) if $main::verbose;
+}
 
 sub protein2Grid {
     my $gridRef        = shift;
@@ -1576,12 +1581,12 @@ sub protein2Grid {
     my $nAreas      = 0;
     my $gridDelta2  = $gridDelta*$gridDelta;
 
-    print "      Mapping atoms to the grid: 0.000%\r" if $main::verbose;
+    printAtomMapping(0, 0, "\r");
     foreach (@{$atomsIdsRef}) {
         next unless $$coordsRef[$_]{'cooZ'};
         next if $$coordsRef[$_]{'cooZ'} > $zMax;
         next if $$coordsRef[$_]{'cooZ'} < $zMin;
-        printf("      Mapping atoms to the grid: %d%% (protein area %.4f nm^2)\r", (++$$coordsRef[$_]{'atomNum'})/scalar(@{$atomsIdsRef})*100, $nAreas*$gridDelta2) if $main::verbose;
+        printAtomMapping((++$$coordsRef[$_]{'atomNum'})/scalar(@{$atomsIdsRef})*100, $nAreas*$gridDelta2, "\r");
 
         ### Get the radius ######################################################
         my $radius = $isMartiniModel ? PTE::getRadius('M') : PTE::getRadius( substr($$coordsRef[$_]{'atomName'}, 0, 1) );
@@ -1603,7 +1608,7 @@ sub protein2Grid {
             }
         }
     }
-    printf("      Mapping atoms to the grid: 100%% (protein area %.4f nm^2)\n", $nAreas*$gridDelta2) if $main::verbose;
+    printAtomMapping(100, $nAreas*$gridDelta2, "\n");
 
     return ($nAreas*$gridDelta2);
 }
@@ -1710,7 +1715,10 @@ sub getGridSlope {
     }
 }
 
-
+sub printCavityInformation {
+    my $cavityArea = shift;
+    printf("      Detecting protein internal cavities: %.4f nm^2 possible      \r", $cavityArea) if $main::verbose;
+}
 
 sub detectCavity {
     my $gridRef         = shift;
@@ -1723,7 +1731,7 @@ sub detectCavity {
     my $gridDelta2    = $gridDelta*$gridDelta;
 
 
-    print "      Detecting protein internal cavities: 0.0000 nm^2 possible\r" if $main::verbose;
+    printCavityInformation(0);
     ### Invert protein grid (set all empty grid points to 2 (poss. cav.)) ######
     for (my $x=0; $x<=$gridsizeX; $x++) {
         for (my $y=0; $y<=$gridsizeY; $y++) {
@@ -1731,7 +1739,7 @@ sub detectCavity {
             $$gridRef[$x][$y] = 2;
             $nCavityAreas++;
         }
-        printf("      Detecting protein internal cavities: %.4f nm^2 possible      \r", $nCavityAreas*$gridDelta2) if $main::verbose;
+        printCavityInformation($nCavityAreas*$gridDelta2);
     }
     ############################################################################
 
@@ -1743,18 +1751,18 @@ sub detectCavity {
         for (my $x=0; $x<=$gridsizeX; $x++) {
             my $neighbCellX = $x - 1;
             $nCavityAreas -= $foundExcl1 = washingOutY($x, $neighbCellX, $gridsizeY, $gridRef, $extCavDetection);
-            printf("      Detecting protein internal cavities: %.4f nm^2 possible      \r", $nCavityAreas*$gridDelta2) if $main::verbose;
+            printCavityInformation($nCavityAreas*$gridDelta2);
         }
 
         for (my $x=$gridsizeX; $x>=0; $x--) {
             my $neighbCellX = $x + 1;
             $nCavityAreas -= $foundExcl2 = washingOutY($x, $neighbCellX, $gridsizeY, $gridRef, $extCavDetection);
-            printf("      Detecting protein internal cavities: %.4f nm^2 possible      \r", $nCavityAreas*$gridDelta2) if $main::verbose;
+            printCavityInformation($nCavityAreas*$gridDelta2);
         }
         $i = 0 if $foundExcl1 || $foundExcl2;
     }
     ############################################################################
-    printf("      Detecting protein internal cavities: %.4f nm^2 detected      \n", $nCavityAreas*$gridDelta2) if $main::verbose;
+    printCavityInformation($nCavityAreas*$gridDelta2);
 
     return ($nCavityAreas*$gridDelta2);
 }
